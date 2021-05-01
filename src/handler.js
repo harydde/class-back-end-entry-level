@@ -167,19 +167,16 @@ const getAllBooksHandler = (request, h) => {
 const getListBookByIdHandler = (request, h) => {
   const { bookId } = request.params;
 
-  const getBookId = listBooks.filter((n) => n.id === bookId)[0];
+  const book = listBooks.filter((n) => n.id === bookId)[0];
 
-  if (getBookId) {
+  if (book !== undefined) {
     // Bila buku dengan id yang dilampirkan ditemukan
-    const response = h.response({
-      status: 'succes',
+    return {
+      status: 'success',
       data: {
-        getBookId,
+        book,
       },
-    })
-      .code(200);
-
-    return response;
+    };
   }
 
   // Bila buku dengan id yang dilampirkan oleh client tidak ditemukan
