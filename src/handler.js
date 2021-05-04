@@ -1,5 +1,6 @@
+/* eslint-disable no-const-assign */
 const { nanoid } = require('nanoid');
-const listBooks = require('./books');
+const books = require('./books');
 
 const addListBooksHandler = (request, h) => {
   const {
@@ -15,8 +16,6 @@ const addListBooksHandler = (request, h) => {
 
   const id = nanoid(16);
   const finished = pageCount === readPage;
-  const insertedAt = new Date().toISOString;
-  const updatedAt = insertedAt;
 
   // Client tidak melampirkan properti namepada request body
   if (!name) {
@@ -40,7 +39,11 @@ const addListBooksHandler = (request, h) => {
     return response;
   }
 
+  const insertedAt = new Date().toISOString();
+  const updatedAt = insertedAt;
+
   const newBooks = {
+    id,
     name,
     year,
     author,
@@ -49,14 +52,13 @@ const addListBooksHandler = (request, h) => {
     pageCount,
     readPage,
     reading,
-    id,
     finished,
     insertedAt,
     updatedAt,
   };
-  listBooks.push(newBooks);
+  books.push(newBooks);
 
-  const isSuccess = listBooks.filter((books) => books.id === id).length > 0;
+  const isSuccess = books.filter((b) => b.id === id).length > 0;
 
   // Respon bila buku berhasil ditambahkan
   if (isSuccess) {
@@ -71,7 +73,6 @@ const addListBooksHandler = (request, h) => {
 
     return response;
   }
-
   // Server gagal memasukkan buku karena alasan umum (generic error)
   const response = h.response({
     status: 'error',
@@ -81,6 +82,8 @@ const addListBooksHandler = (request, h) => {
 
   return response;
 };
+
+// ======================================================================
 
 const getAllBooksHandler = (request, h) => {
   const {
@@ -94,7 +97,7 @@ const getAllBooksHandler = (request, h) => {
     const response = h.response({
       status: 'success',
       data: {
-        books: listBooks.map((book) => ({
+        books: books.map((book) => ({
           id: book.id,
           name: book.name,
           publisher: book.publisher,
@@ -107,7 +110,7 @@ const getAllBooksHandler = (request, h) => {
   }
 
   if (name) {
-    const listBookName = listBooks.filter(
+    const bookName = books.filter(
       (book) => book.name.toLowerCase().includes(name.toLowerCase()),
     );
 
@@ -115,7 +118,7 @@ const getAllBooksHandler = (request, h) => {
     const response = h.response({
       status: 'success',
       data: {
-        books: listBookName.map((book) => ({
+        books: bookName.map((book) => ({
           id: book.id,
           name: book.name,
           publisher: book.publisher,
@@ -128,7 +131,7 @@ const getAllBooksHandler = (request, h) => {
   }
 
   if (reading) {
-    const listBookReading = listBooks.filter(
+    const listBookReading = books.filter(
       (book) => Number(book.reading) === Number(reading),
     );
 
@@ -146,9 +149,35 @@ const getAllBooksHandler = (request, h) => {
 
     return response;
   }
+  if (!reading) {
+    const listBookUnReading = books.filter(
+      (book) => Number(book.reading) !== Number(reading),
+    );
 
-  const listBooksFinished = listBooks.filter(
-    (book) => Number(book.finished) === Number(finished),
+    const response = h.response({
+      status: 'success',
+      data: {
+        books: listBookUnReading.map((book) => ({
+          id: book.id,
+          name: book.name,
+          publisher: book.publisher,
+        })),
+      },
+    })
+      .code(200);
+
+    return response;
+  }
+
+  const status = request.query.finished;
+  if (status === 1) {
+    status = true;
+  } else if (status === 0) {
+    status = false;
+  }
+
+  const listBooksFinished = books.filter(
+    (book) => book.finished.status === finished.status,
   );
 
   const response = h.response({
@@ -164,10 +193,12 @@ const getAllBooksHandler = (request, h) => {
   return response;
 };
 
+// ======================================================================
+
 const getListBookByIdHandler = (request, h) => {
   const { bookId } = request.params;
 
-  const book = listBooks.filter((n) => n.id === bookId)[0];
+  const book = books.filter((b) => b.id === bookId)[0];
 
   if (book !== undefined) {
     // Bila buku dengan id yang dilampirkan ditemukan
@@ -188,6 +219,8 @@ const getListBookByIdHandler = (request, h) => {
 
   return response;
 };
+
+// ======================================================================
 
 const edtBookByIdHandler = (request, h) => {
   const { bookId } = request.params;
@@ -224,11 +257,11 @@ const edtBookByIdHandler = (request, h) => {
     return response;
   }
 
-  const idBook = listBooks.findIndex((book) => book.id === bookId);
+  const index = books.findIndex((book) => book.id === bookId);
 
-  if (idBook !== -1) {
-    listBooks[idBook] = {
-      ...listBooks[idBook],
+  if (index !== -1) {
+    books[index] = {
+      ...books[index],
       name,
       year,
       author,
@@ -256,13 +289,15 @@ const edtBookByIdHandler = (request, h) => {
   return response;
 };
 
+// ======================================================================
+
 const deleteListBookById = (request, h) => {
   const { bookId } = request.params;
 
-  const idBook = listBooks.findIndex((book) => book.id === bookId);
+  const index = books.findIndex((book) => book.id === bookId);
 
-  if (idBook !== -1) {
-    listBooks.splice(idBook, 1);
+  if (index !== -1) {
+    books.splice(index, 1);
 
     // Response jika 'id' dimiliki oleh salah satu buku
     const response = h.response({
