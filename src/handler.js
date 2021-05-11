@@ -84,7 +84,6 @@ const addListBooksHandler = (request, h) => {
 };
 
 // ======================================================================
-
 const getAllBooksHandler = (request, h) => {
   const {
     name,
@@ -92,101 +91,35 @@ const getAllBooksHandler = (request, h) => {
     finished,
   } = request.query;
 
-  if (!name && !reading && !finished) {
-    // Response jika tidak ada query
-    const response = h.response({
-      status: 'success',
-      data: {
-        books: books.map((book) => ({
-          id: book.id,
-          name: book.name,
-          publisher: book.publisher,
-        })),
-      },
-    })
-      .code(200);
-
-    return response;
-  }
+  let filteredBooks = books;
 
   if (name) {
-    const bookName = books.filter(
+    filteredBooks = filteredBooks.filter(
       (book) => book.name.toLowerCase().includes(name.toLowerCase()),
     );
-
-    // Response jika ada query name
-    const response = h.response({
-      status: 'success',
-      data: {
-        books: bookName.map((book) => ({
-          id: book.id,
-          name: book.name,
-          publisher: book.publisher,
-        })),
-      },
-    })
-      .code(200);
-
-    return response;
   }
 
   if (reading) {
-    const listBookReading = books.filter(
-      (book) => Number(book.reading) === Number(reading),
+    filteredBooks = filteredBooks.filter(
+      (book) => book.reading === Boolean(Number(reading)),
     );
-
-    const response = h.response({
-      status: 'success',
-      data: {
-        books: listBookReading.map((book) => ({
-          id: book.id,
-          name: book.name,
-          publisher: book.publisher,
-        })),
-      },
-    })
-      .code(200);
-
-    return response;
   }
-  if (!reading) {
-    const listBookUnReading = books.filter(
-      (book) => Number(book.reading) !== Number(reading),
+
+  if (finished) {
+    filteredBooks = filteredBooks.filter(
+      (book) => book.finished === Boolean(Number(finished)),
     );
-
-    const response = h.response({
-      status: 'success',
-      data: {
-        books: listBookUnReading.map((book) => ({
-          id: book.id,
-          name: book.name,
-          publisher: book.publisher,
-        })),
-      },
-    })
-      .code(200);
-
-    return response;
   }
-
-  const status = request.query.finished;
-  if (status === 1) {
-    status = true;
-  } else if (status === 0) {
-    status = false;
-  }
-
-  const listBooksFinished = books.filter(
-    (book) => book.finished.status === finished.status,
-  );
 
   const response = h.response({
     status: 'success',
-    data: listBooksFinished.map((book) => ({
-      id: book.id,
-      name: book.name,
-      publisher: book.publisher,
-    })),
+    data: {
+      books: filteredBooks.map((book) => ({
+        id: book.id,
+        name: book.name,
+        publisher: book.publisher,
+      })),
+    },
   })
     .code(200);
 
@@ -271,12 +204,14 @@ const edtBookByIdHandler = (request, h) => {
       readPage,
       reading,
     };
+
     // Response apabila buku berhasil diperbarui
     const response = h.response({
       status: 'success',
       message: 'Buku berhasil diperbarui',
     })
       .code(200);
+
     return response;
   }
 
@@ -286,6 +221,7 @@ const edtBookByIdHandler = (request, h) => {
     message: 'Gagal memperbarui buku. Id tidak ditemukan',
   })
     .code(404);
+
   return response;
 };
 
